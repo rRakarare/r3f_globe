@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AdditiveBlending, MathUtils, Vector3 } from "three";
+import { AdditiveBlending, MathUtils, Vector3, Color } from "three";
 import { useSpring, animated } from "@react-spring/three";
 import { useFrame } from "@react-three/fiber";
 import { useControls } from "leva";
@@ -27,7 +27,7 @@ export default function Globe() {
     },
   });
 
-  const { lineColor, maxConnections, minDistance, lineOpacity } = useControls(
+  const { maxConnections, minDistance, lineOpacity } = useControls(
     "lines",
     {
       maxConnections: {
@@ -43,7 +43,6 @@ export default function Globe() {
         step: 0.1,
       },
 
-      lineColor: "#e68fef",
       lineOpacity: {
         value: 1,
         min: 0,
@@ -56,20 +55,20 @@ export default function Globe() {
   const { x, y, z } = useControls("camera", {
     x: {
       value: 0,
-      min: 0,
-      max: 30,
+      min: -40,
+      max: 40,
       step: 0.1,
     },
     y: {
       value: 0,
-      min: 0,
+      min: -30,
       max: 30,
       step: 0.1,
     },
     z: {
-      value: 100,
-      min: 0,
-      max: 30,
+      value: 200,
+      min: 100,
+      max: 400,
       step: 0.1,
     },
   });
@@ -95,15 +94,13 @@ export default function Globe() {
     },
   });
 
-  const { top, left, right, bottom, middle } = useControls("Color moves", {
-    top: "red",
-    left: "blue",
-    right: "green",
-    bottom: "lime",
-    middle: "white",
+  const { mid, left } = useControls("Color moves", {
+    left: "#fff759",
+    mid: "#e68fef",
   });
 
   const groupRef = useRef();
+  const lineMat = useRef();
   const particlesRef = useRef();
   const linesGeometryRef = useRef();
 
@@ -128,27 +125,9 @@ export default function Globe() {
   const v = useMemo(() => new Vector3(), []);
 
   const [active, setActive] = useState(0);
-  const [colorState, setColorState] = useState("MIDDLE");
 
-  const colorRet = () => {
-    switch (colorState) {
-      case "TOP":
-        return top;
-      case "LEFT":
-        return left;
-      case "RIGHT":
-        return right;
-      case "BOTTOM":
-        return bottom;
-
-      default:
-        return middle;
-    }
-  };
-
-  const { scale, color } = useSpring({
+  const { scale } = useSpring({
     scale: active ? 1 : 0,
-    color: colorRet(),
     config: { mass: 5, tension: 400, friction: 50, precision: 0.0001 },
   });
 
@@ -180,118 +159,34 @@ export default function Globe() {
     particlesRef.current.setDrawRange(0, particleCount);
   }, []);
 
-  const checkPos = (x, y) => {
-    const limit = 0.6;
+  const changeColor = (x) => {
 
-    switch (colorState) {
-      case "MIDDLE":
-        if (Math.abs(x) < limit && Math.abs(y) < limit) {
-          break;
-        }
-        if (x >= limit ) {
-          setColorState("RIGHT")
-          break;
-        }
-        if (x <= -limit ) {
-          setColorState("LEFT")
-          break;
-        }
-        if (y >= limit ) {
-          setColorState("TOP")
-          break;
-        }
-        if (y <= -limit ) {
-          setColorState("BOTTOM")
-          break;
-        }
+    const xN = x / xAcc
 
+    const linksAnteil = xN >= 0 ? 0 : -xN;
+    const mitteAnteil = xN >= 0 ? 1 : 1 + xN;
 
-        case "RIGHT":
-          if (x >= limit) {
-            break;
-          }
-          if (x < limit ) {
-            if (Math.abs(x) < limit && Math.abs(y) < limit) {
-              setColorState("MIDDLE")
-              break;
-            }
-            if (y >= limit ) {
-              setColorState("TOP")
-              break;
-            }
-            if (y <= -limit ) {
-              setColorState("BOTTOM")
-              break;
-            }
-          }
-        case "LEFT":
-          if (x <= -limit) {
-            break;
-          }
-          if (x > -limit ) {
-            if (Math.abs(x) < limit && Math.abs(y) < limit) {
-              setColorState("MIDDLE")
-              break;
-            }
-            if (y >= limit ) {
-              setColorState("TOP")
-              break;
-            }
-            if (y <= -limit ) {
-              setColorState("BOTTOM")
-              break;
-            }
-          }
+    const gemischteFarbe = [
+      Math.floor(linksAnteil * parseInt(left.slice(1, 3), 16) + mitteAnteil * parseInt(mid.slice(1, 3), 16)),
+      Math.floor(linksAnteil * parseInt(left.slice(3, 5), 16) + mitteAnteil * parseInt(mid.slice(3, 5), 16)),
+      Math.floor(linksAnteil * parseInt(left.slice(5, 7), 16) + mitteAnteil * parseInt(mid.slice(5, 7), 16))
+    ];
 
-          case "TOP":
-            if (y >= limit) {
-              break;
-            }
-            if (y < limit ) {
-              if (Math.abs(x) < limit && Math.abs(y) < limit) {
-                setColorState("MIDDLE")
-                break;
-              }
-              if (x >= limit ) {
-                setColorState("RIGHT")
-                break;
-              }
-              if (x <= -limit ) {
-                setColorState("LEFT")
-                break;
-              }
-            }
+    const gemischterHex = "#" + gemischteFarbe.map(value => value.toString(16).padStart(2, '0')).join('');
 
-            case "BOTTOM":
-              if (y <= -limit) {
-                break;
-              }
-              if (y > -limit ) {
-                if (Math.abs(x) < limit && Math.abs(y) < limit) {
-                  setColorState("MIDDLE")
-                  break;
-                }
-                if (x >= limit ) {
-                  setColorState("RIGHT")
-                  break;
-                }
-                if (x <= -limit ) {
-                  setColorState("LEFT")
-                  break;
-                }
-              }
+  return gemischterHex;
 
-      default:
-        break;
-    }
-  };
+  }
 
   useFrame((state, delta) => {
-    console.log(state.mouse.y);
+
+    const xPos = groupRef.current.position.x
 
     state.camera.position.lerp({ x, y, z }, 0.1);
 
-    checkPos(state.mouse.x, state.mouse.y);
+    const newHex = changeColor(xPos)
+
+    lineMat.current.color = new Color(newHex)
 
     groupRef.current.position.y = MathUtils.damp(
       groupRef.current.position.y,
@@ -428,8 +323,8 @@ export default function Globe() {
           />
         </bufferGeometry>
         <animated.lineBasicMaterial
+        ref={lineMat}
           opacity={lineOpacity}
-          color={color}
           vertexColors={true}
           blending={AdditiveBlending}
           transparent={true}
