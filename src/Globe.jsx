@@ -1,103 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AdditiveBlending, MathUtils, Vector3, Color } from "three";
 import { useSpring, animated } from "@react-spring/three";
-import { useFrame } from "@react-three/fiber";
-import { useControls } from "leva";
+import { useFrame, useThree } from "@react-three/fiber";
 
 export default function Globe() {
-  const { particleCount, dotSize, dotColor, dotOpacity } = useControls("dots", {
-    particleCount: {
-      value: 500,
-      min: 0,
-      max: 1000,
-      step: 1,
-    },
-    dotSize: {
-      value: 4,
-      min: 0,
-      max: 10,
-      step: 0.1,
-    },
-    dotColor: "#909090",
-    dotOpacity: {
-      value: 1,
-      min: 0,
-      max: 1,
-      step: 0.1,
-    },
-  });
 
-  const { maxConnections, minDistance, lineOpacity } = useControls(
-    "lines",
-    {
-      maxConnections: {
-        value: 20,
-        min: 0,
-        max: 100,
-        step: 1,
-      },
-      minDistance: {
-        value: 2.5,
-        min: 0,
-        max: 10,
-        step: 0.1,
-      },
+  const particleCount = 640
+  const dotSize = 4
+  const dotColor = "#909090"
+  const dotOpacity = 0.7
 
-      lineOpacity: {
-        value: 1,
-        min: 0,
-        max: 1,
-        step: 0.1,
-      },
-    }
-  );
 
-  const { x, y, z } = useControls("camera", {
-    x: {
-      value: 0,
-      min: -40,
-      max: 40,
-      step: 0.1,
-    },
-    y: {
-      value: 0,
-      min: -30,
-      max: 30,
-      step: 0.1,
-    },
-    z: {
-      value: 200,
-      min: 100,
-      max: 400,
-      step: 0.1,
-    },
-  });
+  const maxConnections = 20
+  const minDistance = 2.5
+  const lineOpacity = 0.7
 
-  const { xAcc, yAcc, rotSpeed } = useControls("Movement multiplier", {
-    xAcc: {
-      value: 3,
-      min: 0,
-      max: 7,
-      step: 0.1,
-    },
-    yAcc: {
-      value: 3,
-      min: 0,
-      max: 7,
-      step: 0.1,
-    },
-    rotSpeed: {
-      value: 1,
-      min: 0,
-      max: 5,
-      step: 0.1,
-    },
-  });
 
-  const { mid, left } = useControls("Color moves", {
-    left: "#fff759",
-    mid: "#e68fef",
-  });
+  const xAcc = 5
+  const yAcc = 5
+  const rotSpeed = 0.5
+
+
+
+  const mid = "#e68fef"
+  const left = "#fff759"
+
+
 
   const groupRef = useRef();
   const lineMat = useRef();
@@ -125,6 +53,8 @@ export default function Globe() {
   const v = useMemo(() => new Vector3(), []);
 
   const [active, setActive] = useState(0);
+
+
 
   const { scale } = useSpring({
     scale: active ? 1 : 0,
@@ -182,7 +112,6 @@ export default function Globe() {
 
     const xPos = groupRef.current.position.x
 
-    state.camera.position.lerp({ x, y, z }, 0.1);
 
     const newHex = changeColor(xPos)
 
@@ -284,7 +213,8 @@ export default function Globe() {
   });
 
   return (
-    <animated.group
+    <group position={[8,4,0]}>
+      <animated.group
       ref={groupRef}
       dispose={null}
       scale={scale}
@@ -331,5 +261,6 @@ export default function Globe() {
         />
       </animated.lineSegments>
     </animated.group>
+    </group>
   );
 }

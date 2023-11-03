@@ -4,9 +4,10 @@ import Globe from "./Globe";
 function App() {
   return (
     <>
-      <Canvas camera={{ position: [0, 0, 17.5], fov: 10 }}>
+      <Canvas camera={{ position: [0, 0, 250], fov: 10}}>
         <Globe />
       </Canvas>
+      <div style={{height:"2000px"}}></div>
     </>
   );
 }
